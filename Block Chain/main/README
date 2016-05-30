@@ -1,0 +1,75 @@
+ README
+ roeia1, maayanimi
+ Roei Avrahami (304986714), Ma'ayan Mizrahi (304901259)
+ EX: 3
+
+ FILES:
+ blockChain.h - A multi threaded blockchain database manager.
+ blockChian.h - implementation of blockChain.h. 
+ Block.h - A class that represent a single block.
+ Block.cpp - implementation of block.h
+ Makefile - generating the library libblockchain.a.
+ README - this file.
+
+ REMARKS:
+ using principles seen in class and demos, we implemented the desired interface.
+ for that purpose we used a class Block, containing all relevant information and
+ data for a single block.
+
+ database choices:
+ we saved the blocks that the deamon add to the blockChian in two lists that 
+ used as queues: toAdd, toAddNow. The optional father are kept in the list: "childList",
+  and the all the blocks that where added to the blockChain are kept in a map. as indices we use the threads' id's. 
+ We used pthread_mutex to each of these database, so When ever a thread try to access one of these database we 
+ lock the database and after it finish using it, we unlock the database. This helps us avoid race conditions.
+ 
+ Library functions:
+ init_blockchain - In this function we initialize all the database that we use. we use the pthread_mutex initMutex 
+                   to lock the code that initialize the boolean flag "initialize" that indicate if the library 
+                   was initialize to avoid unexpected behavior of conditional race.
+ add_block -In this function we create a new block that contain the data before we did hashing to it, and push 
+            this block to the "toAdd" list (using by the demon). we lock the toAdd list with pthread_mutex toAddMutex
+            to avoid unexpected behavior behavior of conditional race.
+ to_longes- This function change the flag of the given block's id to true so the deamon will know to attach it to 
+            the longest chain.we don't using any mutex here.
+ attach_now- This function remove the given block (if exist) to "toAddNow" list of block that have an higher priority
+             in the deamon function. we lock the two lists "toAdd" and "toAddNow" with the pthread_mutexes toAddMutex,
+              and toAddNowMutex to avoid unexpected behavior of conditional race. 
+ was_added- This function check if the given block was added. It checks if this block is in the blockMap, toAdd list 
+            or in toAddNow. While we are checking this information we lock this databases with the pthread_mutexes 
+            toAddMutex, toAddNowMutex and blockMapMutex to avoid unexpected behavior,
+ chain_size- return the chain size. we don't using any mutex here.
+ prune_chain- This function prune the chain: it choose randomly longest chain, and save all the id in this chin in 
+              the set "toSave".we lock the blockMap with pthread_mutexes blockMapMutex and delete all the blocks that 
+              are not in to save.
+ close_chain- change boolean flag "close" to true - than the deamon stop adding blocks and start to close the library. 
+  
+ private function:
+ daemonFunc(void*) - This function is the thread that running in the background and add the block to the blockChain after
+                     it do hash to their data. While it use the databases: toAd, toAddNow, and BlockMap it lock them with
+                     their mutexes. when "closing" called the deamon start classing the library (calling closing func). 
+ closing()- closing the library. using mutexs on the database when it closing it and delete its elements.
+int findLongestFather - Return the ID of one of the available father (the longest chains...) randomly. Using 
+                        pthread_mutexes childListMutex while it find it to avoid conditional race.
+void deleteChild() -Called by "prune" delete all the child that where deleted in prune function. Using pthread_mutexes 
+                    childListMutex while it find it to avoid conditional race.
+ 
+ 
+
+
+ ANSWERS:
+ 1.
+ The father of a block is decide before it really attach to the chain, and the deamon is the one that attach it. Because of 
+ that, a block can be the father of a few blocks,(non of those "sons" added yet, so the chain's size didn't change). 
+ The period time that take to add a new block to chain (doing hasing to its data) is the main parameter that effects the
+ numberof multi-poiners. 
+
+ 2.
+ We can use this approach: each new block that will be create will be also call in to_longest function. 
+ In that case each block will be attach to the longest father in running time. 
+ This approach will enable only one long chain, thus relieving us from the boring pruning job.
+ 
+ 3.
+ We don't deal the case when we are in the middle of hasing the data of a block (befor the deamon 
+ attach this block to blockChain), and at the same time prune is called. In that case we may delete
+  the father of this block. 
