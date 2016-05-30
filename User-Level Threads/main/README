@@ -1,0 +1,49 @@
+roeia1, maayanimi
+Roei Avrahami (304986714), Ma'ayan Mizrahi (304901259)
+EX: 2
+
+FILES:
+uthreads.cpp - implementation of uthreads.hh
+Thread.hh    - a class representing a single thread. 
+Thread.cpp   - implementation of Thread.hh
+Makefile	 - generating the static library libuthreads.a. 
+README       - this file.
+
+REMARKS:
+using principles seen in class and demos, we implemented the desired interface.
+for that purpose we used a class Thread, containing all relevant information and
+data for a single thread.
+
+database choices: the threads themselves are kept in a map. as indices we use 
+the threads' id's. all the other containers keep only integers - one integer for
+current running thread, and 4 lists for each priority queue and blocked queue. list
+was chosen as it is easy to implement a queue with it, with access to the first
+element, and ability to push at the end. it is also useful as a pool, with
+access to any other element by searching one of its attributes (in our case, 
+id).
+
+the implementation is rather simple, using few private methods in addition to 
+those described in the interface. the switchThread function carry most of 
+the work, picking next thread to run from the priority queues and switch the 
+threads. to avoid signal races we used our setAlaram method which block and unblock the signals, 
+encapsulating each atomic block of commands, preventing popping signals to 
+intervene while at it.
+
+ANSWERS:
+1.
+RR:
+pro - all the threads will run eventually without expecting any starvation,
+because each thread has the same limit time to run.
+In our case this pro is irrelevant because we choose the next thread according to his priority.
+con - long threads will never finish in one run although it might be with the highest priority.
+In out case this con is relevant because we set a same limit running time for each thread.
+PQ:
+pro - threads running according to priority and in case of starvation it will be a "smart" one,
+the ones with the lowest priority will be the least ones to run.
+In our case this pro is relevant because we choose our next thread according to his color priority.
+con - there might be a starvation which mean a thread won't run for a long time.
+In our case this con is relevant because as we said earlier we use color priority in choosing the next thread.
+
+2. Example for a user-level event that will imply blocking a thread:
+A game waiting for an input from the user, the game will be blocked untill the user will give an input (keyboard click
+or a mouse movement for example).
